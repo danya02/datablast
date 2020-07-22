@@ -5,7 +5,7 @@ It may not actually be stored this way on disk, but it must be accessible to FFm
 
 Each frame contains any number of **symbols**, and it may not contain any at all.
 Each symbol is a QR code symbol containing data encoded in the "binary/byte" mode.
-Depending on context, this data can be interpreted as either ASCII-encoded text or as binary data.
+Depending on context, this data can be interpreted as ASCII-encoded text.
 (TODO: support other types of symbol formats)
 
 A **sequence** is an ordered list of symbols.
@@ -24,9 +24,10 @@ There are two types of symbols: **content** symbols and **meta** symbols.
 A content symbol contains a part of the binary data encoded by this sequence.
 
 In a content symbol:
-- the first byte is equal to the identifier of the sequence it belongs to;
-- the next 8 bytes represent a big-endian unsigned integer which represents this symbol's sequence number (starting from 0);
-- the remaining bytes are the binary data in this part.
+- first the number of this sequence is written as two lowercase base-16 numbers is written;
+- then there is an arbitrary number of lowercase base-16 numbers representing this symbol's sequence number;
+- then a '@' (commercial at, ASCII 0x40) is written;
+- the rest of the symbol's content is Base64-encoded binary data for this content symbol.
 
 To reassemble the file, one needs to concatenate the binary data in each of the content symbols, in ascending order of the sequence number.
 
