@@ -3,7 +3,10 @@ use rqrr;
 #[macro_use]
 extern crate clap;
 
+mod symbol;
+
 fn main() {
+    let symb = symbol::symbol_from_string("test".to_string());
     let matches = clap_app!(myapp =>
         (version: "0.0")
         (about: "Datablast manipulation")
