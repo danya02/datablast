@@ -1,13 +1,53 @@
 use serde::{Deserialize, Serialize};
-use serde_json::Result;
+use serde_json;
 use log::{error, warn, info, debug, trace};
-use base64::{encode, decode};
+use base64::{encode, decode, DecodeError};
+use core::num::ParseIntError;
+
+pub type Version = u32;
+
+#[derive(Debug)]
+pub enum SymbolDecodeError {
+    InvalidContent(ContentDecodeError),
+    InvalidMeta(MetaDecodeError),
+}
+
+#[derive(Debug)]
+pub enum ContentDecodeError {
+    InvalidDataPart(DecodeError),
+    InvalidSequenceIdPart(ParseIntError),
+    InvalidPieceIdPart(ParseIntError),
+    NoDataPart
+}
+
+#[derive(Debug)]
+pub enum MetaDecodeError {
+    UnknownVersion(Version),
+    InvalidLengthOfContentLen(usize),
+    InvalidLengthOfHashField(usize),
+}
+
+pub type MetaValidateResult = Result<(), MetaDecodeError>;
+
+pub type SymbolDecodeResult = Result<Symbol, SymbolDecodeError>;
 
 
-pub fn symbol_from_string(data: String) -> Option<Symbol> {
+pub fn symbol_from_string(data: String) -> SymbolDecodeResult {
     match serde_json::from_str(&data) {
-        Ok(metasymb) => Some(Symbol::Meta(metasymb)),
-        Err(_) => Some(Symbol::Content(ContentSymbol::from_str(data)?)),
+        Ok(metasymb) => {
+                            let metasymb: MetaSymbol = metasymb;
+                            match metasymb.validate() {
+                                     Ok(_) => Ok(Symbol::Meta(metasymb)),
+                                     Err(error) => Err(SymbolDecodeError::InvalidMeta(error)),
+                                }
+                        },
+        Err(error) => {
+            trace!("Couldn't decode symbol as JSON: {:?} (data is {:?})", error, data);
+            match ContentSymbol::from_str(data) {
+                Ok(contentsymb) => Ok(Symbol::Content(contentsymb)),
+                Err(error) => Err(SymbolDecodeError::InvalidContent(error))
+            }
+        }
     }
 }
 
@@ -18,12 +58,21 @@ pub enum Symbol {
 
 #[derive(Serialize, Deserialize)]
 pub struct MetaSymbol {
-    ver: u32,
+    ver: Version,
     frames: usize,
     cur_frame: usize,
     content_len: Vec<usize>, // should only have two elements, as per spec v.0
     sha3: String, // should have len==64
-    name: String,        
+    name: String,
+}
+
+impl MetaSymbol {
+    pub fn validate(&self) -> MetaValidateResult {
+        if self.ver != 0 {return Err(MetaDecodeError::UnknownVersion(self.ver));}
+        if self.content_len.len() != 2 {return Err(MetaDecodeError::InvalidLengthOfContentLen(self.content_len.len()));}
+        if self.sha3.len() != 64 {return Err(MetaDecodeError::InvalidLengthOfHashField(self.sha3.len()));}
+        Ok(())
+    }
 }
 
 pub struct ContentSymbol {
@@ -33,13 +82,17 @@ pub struct ContentSymbol {
 }
 
 impl ContentSymbol {
-    pub fn from_str(data: String) -> Option<Self> {
+    pub fn from_str(data: String) -> Result<Self, ContentDecodeError> {
         let mut iter = data.split("@");
-        let num_part = iter.next()?;
-        let data_part = iter.next()?;
-        let seq = u8::from_str_radix(&num_part[..2], 16).expect("sequence number is not valid hex");
-        let ind = usize::from_str_radix(&num_part[2..], 16).expect("index is not valid hex");
-        let data = decode(data_part).expect("data invalid");
-        Some(ContentSymbol{ sequence: seq, index: ind, data: data })
+        let num_part = iter.next().expect("Wasn't able to get first element in a string split by character?!!");
+        let data_part;
+        match iter.next(){
+            Some(data) => {data_part = data;},
+            None => {return Err(ContentDecodeError::NoDataPart);},
+        }
+        let seq = match u8::from_str_radix(&num_part[..2], 16) { Ok(val)=>val, Err(error)=>{return Err(ContentDecodeError::InvalidSequenceIdPart(error));} };
+        let ind = match usize::from_str_radix(&num_part[2..], 16) { Ok(val)=>val, Err(error)=>{return Err(ContentDecodeError::InvalidPieceIdPart(error));} };
+        let data = match decode(data_part) {Ok(data)=>data, Err(error)=>{return Err(ContentDecodeError::InvalidDataPart(error)); } };
+        Ok(ContentSymbol{ sequence: seq, index: ind, data: data })
     }
 }

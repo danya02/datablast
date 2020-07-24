@@ -8,8 +8,8 @@ fn symbols_from_image(img: ImageBuffer<Rgb<u8>, Vec<u8>>) -> Vec<Symbol> {
     let mut output = Vec::new();
     for content in strings_from_image(img).iter() {
         match symbol_from_string(content.to_string()) {
-            Some(symbol) => output.push(symbol),
-            None => warn!("This content could not be parsed as a symbol: {:?}", content),
+            Ok(symbol) => output.push(symbol),
+            Err(error) => warn!("This content could not be parsed as a symbol: {:?} The error was: {:?}", content, error),
         } 
     }
     output
@@ -23,7 +23,7 @@ fn strings_from_image(img: ImageBuffer<Rgb<u8>, Vec<u8>>) -> Vec<String> {
         match grid.decode() {
             Ok((meta, content)) => {
             },
-            Err(e) => {info!("Failed to parse grid's content");},
+            Err(e) => {info!("Failed to parse grid's content: {:?}", e);},
         }
     }
     output

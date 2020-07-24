@@ -16,7 +16,6 @@ fn main() {
         (about: "Datablast manipulation")
         (@subcommand qrtest =>
             (about: "tests the QR-code reader")
-            (version: "1.3")
             (@arg file: -f +takes_value "file to read qr code from")
         )
     ).get_matches();
