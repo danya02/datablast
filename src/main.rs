@@ -1,11 +1,15 @@
-use image;
-use rqrr;
 #[macro_use]
 extern crate clap;
 
+extern crate log;
+use log::{error, warn, info, debug, trace};
+extern crate simple_logger;
+
 mod symbol;
+mod qr_reader;
 
 fn main() {
+    simple_logger::init().unwrap();
     let symb = symbol::symbol_from_string("test".to_string());
     let matches = clap_app!(myapp =>
         (version: "0.0")
@@ -18,15 +22,7 @@ fn main() {
     ).get_matches();
 
     if let Some(matches) = matches.subcommand_matches("qrtest") {
-        let img = image::open(matches.value_of("file").unwrap_or("test.png")).unwrap().to_luma();
-        let mut img = rqrr::PreparedImage::prepare_from_greyscale(img.width() as usize, img.height() as usize, |x, y: usize| -> u8 { img.get_pixel(x as u32, y as u32)[0] });
-        let grids = img.detect_grids();
-        println!("There are {} grids", grids.len());
-        for grid in grids.iter() {
-            let (meta, content) = grid.decode().unwrap();
-            println!("{:?}", meta);
-            println!("{}", content);
-        }
+        println!("Selected qrtest");
     } else {println!("Subcommand required");}
     
 }

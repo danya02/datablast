@@ -1,7 +1,8 @@
 use serde::{Deserialize, Serialize};
 use serde_json::Result;
-
+use log::{error, warn, info, debug, trace};
 use base64::{encode, decode};
+
 
 pub fn symbol_from_string(data: String) -> Option<Symbol> {
     match serde_json::from_str(&data) {
