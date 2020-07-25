@@ -110,6 +110,6 @@ impl ContentSymbol {
         Ok(ContentSymbol{ sequence: seq, index: ind, data: data })
     }
     pub fn to_str(&self) -> String {
-        format!("{:02x}{:x}@{}", self.sequence, self.index, encode(self.data))
+        format!("{:02x}{:x}@{}", self.sequence, self.index, encode(&self.data))
     }
 }

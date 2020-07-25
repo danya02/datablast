@@ -23,7 +23,7 @@ fn main() {
         )
     ).get_matches();
 
-    if let Some(matches) = matches.subcommand_matches("qrtest") {
+    if let Some(matches) = matches.subcommand_matches("qrread") {
         let filename = matches.value_of("file").expect("file name required");
         info!("Loading image {} ...", filename);
         let img = open(filename).expect("image invalid").to_rgb();
