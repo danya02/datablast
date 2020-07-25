@@ -6,13 +6,13 @@ use core::num::ParseIntError;
 
 pub type Version = u32;
 
-#[derive(Debug)]
+#[derive(Debug, Eq, PartialEq)]
 pub enum SymbolDecodeError {
     InvalidContent(ContentDecodeError),
     InvalidMeta(MetaDecodeError),
 }
 
-#[derive(Debug)]
+#[derive(Debug, Eq, PartialEq)]
 pub enum ContentDecodeError {
     InvalidDataPart(DecodeError),
     InvalidSequenceIdPart(ParseIntError),
@@ -20,7 +20,7 @@ pub enum ContentDecodeError {
     NoDataPart
 }
 
-#[derive(Debug)]
+#[derive(Debug, Eq, PartialEq)]
 pub enum MetaDecodeError {
     UnknownVersion(Version),
     InvalidLengthOfContentLen(usize),
@@ -51,7 +51,7 @@ pub fn symbol_from_string(data: String) -> SymbolDecodeResult {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Eq, PartialEq)]
 pub enum Symbol {
     Meta(MetaSymbol),
     Content(ContentSymbol),
@@ -67,14 +67,14 @@ impl Symbol {
 }
 
 #[derive(Serialize, Deserialize)]
-#[derive(Debug)]
+#[derive(Debug, Eq, PartialEq)]
 pub struct MetaSymbol {
-    ver: Version,
-    frames: usize,
-    cur_frame: usize,
-    content_len: Vec<usize>, // should only have two elements, as per spec v.0
-    sha3: String, // should have len==64
-    name: String,
+    pub ver: Version,
+    pub frames: usize,
+    pub cur_frame: usize,
+    pub content_len: Vec<usize>, // should only have two elements, as per spec v.0
+    pub sha3: String, // should have len==64
+    pub name: String,
 }
 
 impl MetaSymbol {
@@ -88,11 +88,11 @@ impl MetaSymbol {
     pub fn to_str(&self) -> String { serde_json::to_string(self).expect("JSON serialization failed?!") }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Eq, PartialEq)]
 pub struct ContentSymbol {
-    sequence: u8,
-    index: usize,
-    data: Vec<u8>,
+    pub sequence: u8,
+    pub index: usize,
+    pub data: Vec<u8>,
 }
 
 impl ContentSymbol {

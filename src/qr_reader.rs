@@ -29,3 +29,28 @@ fn strings_from_image(img: ImageBuffer<Rgb<u8>, Vec<u8>>) -> Vec<String> {
     }
     output
 }
+
+#[cfg(test)]
+mod tests {
+    use image::open;
+    use crate::symbol::{Symbol, MetaSymbol, ContentSymbol};
+    use crate::qr_reader::symbols_from_image;
+    fn get_single_symbol(name: &str) -> Symbol {
+        let img = open(name).unwrap();
+        let mut symb = symbols_from_image(img.to_rgb());
+        assert_eq!(symb.len(), 1);
+        symb.remove(0)
+    }
+
+    #[test]
+    fn test_read_metasymb() {
+        let symb = get_single_symbol("test_data/metasymb1.png");
+        assert_eq!(symb, Symbol::Meta(MetaSymbol { ver:0, frames:1000, cur_frame:5, content_len: vec![16384, 750], sha3: "a7ffc6f8bf1ed76651c14756a061d662f580ff4de43b49fa82d80a4b80f8434a".to_string(), name: "test.bin".to_string() }));
+    }
+
+    #[test]
+    fn test_read_contentsymb() {
+        let symb = get_single_symbol("test_data/contentsymb1.png");
+        assert_eq!(symb, Symbol::Content(ContentSymbol {sequence: 0xff, index: 0xaaaa, data: b"HelloWorld!".to_vec() } ));
+    }
+}
