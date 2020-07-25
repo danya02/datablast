@@ -4,7 +4,7 @@ use log::{error, warn, info, debug, trace};
 
 use crate::symbol::{Symbol, symbol_from_string};
 
-fn symbols_from_image(img: ImageBuffer<Rgb<u8>, Vec<u8>>) -> Vec<Symbol> {
+pub fn symbols_from_image(img: ImageBuffer<Rgb<u8>, Vec<u8>>) -> Vec<Symbol> {
     let mut output = Vec::new();
     for content in strings_from_image(img).iter() {
         match symbol_from_string(content.to_string()) {
@@ -21,7 +21,8 @@ fn strings_from_image(img: ImageBuffer<Rgb<u8>, Vec<u8>>) -> Vec<String> {
     let grids = prep_img.detect_grids();
     for grid in grids.iter() {
         match grid.decode() {
-            Ok((meta, content)) => {
+            Ok((_meta, content)) => {
+                output.push(content);
             },
             Err(e) => {info!("Failed to parse grid's content: {:?}", e);},
         }

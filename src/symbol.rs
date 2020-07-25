@@ -51,12 +51,23 @@ pub fn symbol_from_string(data: String) -> SymbolDecodeResult {
     }
 }
 
+#[derive(Debug)]
 pub enum Symbol {
     Meta(MetaSymbol),
     Content(ContentSymbol),
 }
 
+impl Symbol {
+    pub fn to_str(&self) -> String {
+        match self {
+            Symbol::Meta(symb) => symb.to_str(),
+            Symbol::Content(symb) => symb.to_str(),
+        }
+    }
+}
+
 #[derive(Serialize, Deserialize)]
+#[derive(Debug)]
 pub struct MetaSymbol {
     ver: Version,
     frames: usize,
@@ -73,8 +84,11 @@ impl MetaSymbol {
         if self.sha3.len() != 64 {return Err(MetaDecodeError::InvalidLengthOfHashField(self.sha3.len()));}
         Ok(())
     }
+
+    pub fn to_str(&self) -> String { serde_json::to_string(self).expect("JSON serialization failed?!") }
 }
 
+#[derive(Debug)]
 pub struct ContentSymbol {
     sequence: u8,
     index: usize,
@@ -94,5 +108,8 @@ impl ContentSymbol {
         let ind = match usize::from_str_radix(&num_part[2..], 16) { Ok(val)=>val, Err(error)=>{return Err(ContentDecodeError::InvalidPieceIdPart(error));} };
         let data = match decode(data_part) {Ok(data)=>data, Err(error)=>{return Err(ContentDecodeError::InvalidDataPart(error)); } };
         Ok(ContentSymbol{ sequence: seq, index: ind, data: data })
+    }
+    pub fn to_str(&self) -> String {
+        format!("{:02x}{:x}@{}", self.sequence, self.index, encode(self.data))
     }
 }
