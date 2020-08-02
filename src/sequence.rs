@@ -1,13 +1,14 @@
 use crate::symbol::{Symbol, MetaSymbol, ContentSymbol};
 use std::collections::HashMap;
+use sha3::{Digest, Sha3_256};
 
 struct Sequence {
     sequence_id: u8,
     chunks: HashMap<usize, Vec<u8>>,
     file_len: usize,
+    chunks_count: usize,
     file_name: String,
     target_hash: [u8;32],
-    want_symbols: usize,
 }
 
 enum SymbolInsertError {
@@ -18,9 +19,14 @@ enum SymbolInsertError {
     ChunkContentMismatch,
 }
 
+enum CollectDataError {
+    DiscontinuousContentIDs,
+    HashMismatch,
+}
+
 impl Sequence {
     pub fn new(meta: MetaSymbol) -> Sequence {
-        Sequence { sequence_id: meta.seq_id, file_len: meta.content_len[0], target_hash: meta.get_hash(), file_name: meta.name, chunks: HashMap::new(), want_symbols: meta.frames-1 }
+        Sequence { sequence_id: meta.seq_id, file_len: meta.content_len[0], chunks_count: meta.content_len[1], target_hash: meta.get_hash(), file_name: meta.name, chunks: HashMap::new() }
     }
 
     pub fn insert_new(&mut self, symb: Symbol) -> Result<(), SymbolInsertError> {
@@ -51,6 +57,25 @@ impl Sequence {
             },
         }
         Ok(())
+    }
+
+    fn collect_data(&self) -> Result<Vec<u8>, CollectDataError> {
+        let mut outp = Vec::new();
+        let mut keys = Vec::new();
+        for key in self.chunks.keys() {
+            keys.push(key);
+        }
+        keys.sort();
+        let mut last_key = 0;
+        for key in keys.iter() {
+            if *key - last_key > 1 { return Err(CollectDataError::DiscontinuousContentIDs); }
+            outp.extend(self.chunks.get(key).unwrap());
+        }
+        let mut hasher = Sha3_256::new();
+        hasher.update(&outp);
+        let hash = hasher.finalize();
+        if hash.as_slice() != self.target_hash { return Err(CollectDataError::HashMismatch); }
+        Ok(outp)
     }
 }
 
