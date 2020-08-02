@@ -36,7 +36,8 @@ To reassemble the file, one needs to concatenate the binary data in each of the 
 A meta symbol contains a JSON string. It must contain these fields:
 
 - `ver`: integer, the version of the specification used to encode this sequence. Equals the literal value `0`.
-- `frames`: integer, the number of frames used to encode this sequence. 
+- `seq_id`: integer, must be between 0 and 255 inclusive. Corresponds to the sequence number in the data symbols.
+- `frames`: integer, the number of frames (including meta frames, and including this one) used to encode this sequence. 
 - `cur_frame`: integer, the number of this frame as an offset from the start of this sequence. The first frame is 0.
 - `content_len`: array containing 2 elements:
         - 0: integer, the length of the encoded file in bytes;
