@@ -16,3 +16,4 @@ base64 = "0.12.3"
 log = "0.4.11"
 simple_logger = "1.6.0"
 qrcode = { version = "0.11", default-features = true }
+hex = "0.4.2"

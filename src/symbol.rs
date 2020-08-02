@@ -3,6 +3,7 @@ use serde_json;
 use log::{error, warn, info, debug, trace};
 use base64::{encode, decode, DecodeError};
 use core::num::ParseIntError;
+use hex;
 
 pub type Version = u32;
 
@@ -25,6 +26,7 @@ pub enum MetaDecodeError {
     UnknownVersion(Version),
     InvalidLengthOfContentLen(usize),
     InvalidLengthOfHashField(usize),
+    HashFieldNotHex,
 }
 
 pub type MetaValidateResult = Result<(), MetaDecodeError>;
@@ -70,6 +72,7 @@ impl Symbol {
 #[derive(Debug, Eq, PartialEq)]
 pub struct MetaSymbol {
     pub ver: Version,
+    pub seq_id: u8,
     pub frames: usize,
     pub cur_frame: usize,
     pub content_len: Vec<usize>, // should only have two elements, as per spec v.0
@@ -82,10 +85,19 @@ impl MetaSymbol {
         if self.ver != 0 {return Err(MetaDecodeError::UnknownVersion(self.ver));}
         if self.content_len.len() != 2 {return Err(MetaDecodeError::InvalidLengthOfContentLen(self.content_len.len()));}
         if self.sha3.len() != 64 {return Err(MetaDecodeError::InvalidLengthOfHashField(self.sha3.len()));}
+        let decode_res = hex::decode(&self.sha3);
+        if decode_res.is_err() { return Err(MetaDecodeError::HashFieldNotHex); }
         Ok(())
     }
 
     pub fn to_str(&self) -> String { serde_json::to_string(self).expect("JSON serialization failed?!") }
+    pub fn get_hash(&self) -> [u8;32] {
+        let vec = hex::decode(&self.sha3).unwrap(); // this should not panic if this has been validated
+        let slice = vec.as_slice();
+        let mut array = [0; 32];
+        array.copy_from_slice(slice);
+        array
+    }
 }
 
 #[derive(Debug, Eq, PartialEq)]
