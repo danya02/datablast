@@ -8,6 +8,8 @@ extern crate simple_logger;
 mod symbol;
 mod qr_reader;
 mod qr_writer;
+mod video;
+mod sequence;
 
 use image::open;
 

@@ -25,7 +25,7 @@ A content symbol contains a part of the binary data encoded by this sequence.
 
 In a content symbol:
 - first the number of this sequence is written as two lowercase base-16 numbers is written;
-- then there is an arbitrary number of lowercase base-16 numbers representing this symbol's sequence number;
+- then there is an arbitrary number of lowercase base-16 numbers representing this symbol's sequence number (the data sequence numbering starts from 0, and is distinct from the frame numbering);
 - then a '@' (commercial at, ASCII 0x40) is written;
 - the rest of the symbol's content is Base64-encoded binary data for this content symbol.
 

@@ -18,3 +18,4 @@ simple_logger = "1.6.0"
 qrcode = { version = "0.11", default-features = true }
 hex = "0.4.2"
 sha3 = "0.9.1"
+rand = "0.7.3"
