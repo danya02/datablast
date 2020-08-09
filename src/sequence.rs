@@ -3,7 +3,10 @@ use std::collections::HashMap;
 use sha3::{Digest, Sha3_256};
 use rand::prelude::*;
 use std::iter;
+use thiserror::Error;
 
+
+/// Decode a sequence of symbols into a single file.
 struct SequenceDecoder {
     sequence_id: u8,
     chunks: HashMap<usize, Vec<u8>>,
@@ -13,24 +16,50 @@ struct SequenceDecoder {
     target_hash: [u8;32],
 }
 
+
+/// Errors that may occur while inserting a symbol into a sequence.
+#[derive(Error, Debug)]
 enum SymbolInsertError {
+    /// This symbol has a sequence ID that differs from the rest of the symbols inserted so far.
+    #[error("the sequence id of this symbol does not match the rest of the sequence")]
     WrongSequenceID,
+    
+    /// This symbol claims the file has a different length from what the rest of symbols are saying.
+    #[error("this symbol has a different file length from the rest of the sequence")]
     FileLenMismatch,
+    
+    /// This symbol claims the file has a different hash from what the rest of symbols are saying.
+    #[error("this symbol has a different hash from the rest of the sequence")]
     HashMismatch,
+    
+    /// This symbol claims the file has a different name from what the rest of symbols are saying.
+    #[error("this symbol has a different file name from the rest of the sequence")]
     FileNameMismatch,
+    
+    /// This symbol claims to be the same element of the sequence as another symbol, but it has different content.
+    #[error("two symbols that claim to be the same element in sequence have different content")]
     ChunkContentMismatch,
 }
 
+/// Errors that may occur when collecting the data chunks into a single file.
+#[derive(Error, Debug)]
 enum CollectDataError {
+    /// There is a gap in the numbering of content symbols. This probably means that some symbols have not been loaded yet.
+    #[error("there is a gap in the numbering of content symbols, which probably indicates not all symbols have been parsed")]
     DiscontinuousContentIDs,
+
+    /// We have assembled the chunks into a sequence, but that sequence's hash does not match what the meta symbols are claiming.
+    #[error("once the data had been concatenated, its hash does not correspond to the meta symbols' hash field")]
     HashMismatch,
 }
 
 impl SequenceDecoder {
+    /// Create decoder and initialize all its expectations of the following symbols by the contents of this meta symbol.
     pub fn new(meta: MetaSymbol) -> SequenceDecoder {
         SequenceDecoder { sequence_id: meta.seq_id, file_len: meta.content_len[0], chunks_count: meta.content_len[1], target_hash: meta.get_hash(), file_name: meta.name, chunks: HashMap::new() }
     }
 
+    /// Parse a symbol and update self with its content.
     pub fn insert_new(&mut self, symb: Symbol) -> Result<(), SymbolInsertError> {
         match symb {
             Symbol::Meta(meta) => self.insert_meta(meta),
@@ -61,6 +90,7 @@ impl SequenceDecoder {
         Ok(())
     }
 
+    /// Try to assemble a complete file out of the chunks loaded in.
     fn collect_data(&self) -> Result<Vec<u8>, CollectDataError> {
         let mut outp = Vec::new();
         let mut keys = Vec::new();
@@ -81,9 +111,15 @@ impl SequenceDecoder {
     }
 }
 
+/// Configuration for sequence encoder.
 struct SequenceEncoderConfig {
+    /// Each symbol will be emitted this many times before moving on to the next one.
     pub persist_each_symbol_for_frames: usize,
+
+    /// At most this many bytes will be encoded in each data symbol.
     pub max_bytes_per_data_symbol: usize,
+
+    /// After each meta symbol, there will be this many data symbols, and after that another meta symbol will be placed.
     pub data_symbols_between_meta_symbols: usize,
 }
 
@@ -102,6 +138,7 @@ impl Default for SequenceEncoderConfig {
     }
 }
 
+/* COMMENTED OUT BECAUSE I CAN'T FIGURE OUT HOW TO MAKE THIS WORK 
 struct SequenceEncoder {
     sequence_id: u8,
     data: Vec<u8>,
@@ -197,3 +234,4 @@ impl Iterator for SequenceEncoder {
 impl ExactSizeIterator for SequenceEncoder {
     fn len(&self) -> usize { unimplemented!(); }
 }
+*/

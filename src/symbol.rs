@@ -4,28 +4,45 @@ use log::{error, warn, info, debug, trace};
 use base64::{encode, decode, DecodeError};
 use core::num::ParseIntError;
 use hex;
+use thiserror::Error;
 
 pub type Version = u32;
 
-#[derive(Debug, Eq, PartialEq)]
+#[derive(Debug, Eq, PartialEq, Error)]
 pub enum SymbolDecodeError {
+    #[error("There was an error while decoding this content symbol: {0}")]
     InvalidContent(ContentDecodeError),
+    #[error("There was an error while decoding this meta symbol: {0}")]
     InvalidMeta(MetaDecodeError),
 }
 
-#[derive(Debug, Eq, PartialEq)]
+#[derive(Debug, Eq, PartialEq, Error)]
 pub enum ContentDecodeError {
+    #[error("The data part was not valid Base64: {0}")]
     InvalidDataPart(DecodeError),
+
+    #[error("The sequence ID was not valid hex: {0}")]
     InvalidSequenceIdPart(ParseIntError),
+
+    #[error("The piece ID was not valid hex: {0}")]
     InvalidPieceIdPart(ParseIntError),
+
+    #[error("The data part was empty")]
     NoDataPart
 }
 
-#[derive(Debug, Eq, PartialEq)]
+#[derive(Debug, Eq, PartialEq, Error)]
 pub enum MetaDecodeError {
+    #[error("This program version does not understand this meta version: {0}")]
     UnknownVersion(Version),
+
+    #[error("There were {0} elements in the content_len array while 2 were expected")]
     InvalidLengthOfContentLen(usize),
+
+    #[error("The hash field was supposed to be a string of 64 characters, but {0} were found instead")]
     InvalidLengthOfHashField(usize),
+
+    #[error("The hash field is not a valid hex number")]
     HashFieldNotHex,
 }
 
@@ -54,6 +71,7 @@ pub fn symbol_from_string(data: String) -> SymbolDecodeResult {
 }
 
 #[derive(Debug, Eq, PartialEq)]
+/// Some sort of symbol. Currently supported are meta symbols and content symbols.
 pub enum Symbol {
     Meta(MetaSymbol),
     Content(ContentSymbol),
@@ -70,6 +88,7 @@ impl Symbol {
 
 #[derive(Serialize, Deserialize)]
 #[derive(Debug, Eq, PartialEq)]
+/// A meta symbol. Contains information about the sequence.
 pub struct MetaSymbol {
     pub ver: Version,
     pub seq_id: u8,
@@ -101,6 +120,7 @@ impl MetaSymbol {
 }
 
 #[derive(Debug, Eq, PartialEq)]
+/// A content symbol. Contains a piece of data from the encoded file.
 pub struct ContentSymbol {
     pub sequence: u8,
     pub index: usize,

@@ -4,6 +4,7 @@ use log::{error, warn, info, debug, trace};
 
 use crate::symbol::{Symbol, symbol_from_string};
 
+/// Get a list of all symbols found in this image.
 pub fn symbols_from_image(img: RgbImage) -> Vec<Symbol> {
     let mut output = Vec::new();
     for content in strings_from_image(img).iter() {
@@ -15,6 +16,8 @@ pub fn symbols_from_image(img: RgbImage) -> Vec<Symbol> {
     output
 }
 
+
+/// Get a list of all strings from all the QR codes in this image.
 fn strings_from_image(img: RgbImage) -> Vec<String> {
     let mut output = Vec::new();
     let mut prep_img = rqrr::PreparedImage::prepare_from_greyscale(img.width() as usize, img.height() as usize, |x, y: usize| -> u8 { img.get_pixel(x as u32, y as u32)[0] });

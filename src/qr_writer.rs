@@ -3,17 +3,22 @@ use qrcode::types::{QrError, Color};
 use image::{Rgb, RgbImage};
 
 use crate::symbol;
+use thiserror::Error;
 
+#[derive(Error, Debug)]
 pub enum QrEncodeError {
+    #[error("The QR encoding library returned this error: {0}")]
     EncodingLibError(QrError),
 }
 
 pub type QrEncodeResult = Result<RgbImage, QrEncodeError>;
 
+/// Encode the information in this symbol as a QR code.
 pub fn symbol_to_qrcode(symb: symbol::Symbol) -> QrEncodeResult {
     string_to_qrcode(symb.to_str())
 }
 
+/// Render this QR code onto an image.
 fn qrcode_to_image(code: QrCode) -> RgbImage {
     let width = code.width() as u32;
     let mut img = RgbImage::new(width+8, width+8); // leaving 4 pixels for the quiet zone
@@ -28,6 +33,7 @@ fn qrcode_to_image(code: QrCode) -> RgbImage {
     img
 }
 
+/// Get an image of a QR code that encodes this string.
 pub fn string_to_qrcode(data: String) -> QrEncodeResult {
     let code = QrCode::new(data);
     let to_render;
