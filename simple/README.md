@@ -7,12 +7,12 @@ This can be used to transfer files using videos when on a limited connection exc
 
 1. Prepare the file by splitting it into smaller pieces.
 These must have names consisting of a number of the piece.
-They must also be not longer than 3436 bytes in size -- this is a limitation of the QR code size and of the a85-encoding.
+They must also be not longer than 1864 bytes in size -- this is a limitation of the QR code size and of the a85-encoding.
 
 This can be done with standard `split(1)` as follows:
 
 ```bash
-split -b 3436 -d -a 100 yourfile.bin ""
+split -b 1864 -d -a 100 yourfile.bin ""
 ```
 
 2. Create QR-codes by running the `encode.py` program, pointing it at the directory containing these file chunks.
@@ -24,6 +24,7 @@ It will replace them with images of the QR codes. It is safe to run multiple pro
 ffmpeg -i %d.png outp.mp4
 ```
 4. Transfer the video.
+If using YouTube, this tool might be useful for uploading the video without user interaction: https://github.com/tokland/youtube-upload
 
 5. Split the video into frames, each of which must have a name of the form `[frame number].[ext]`.
 
